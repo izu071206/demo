@@ -1,0 +1,37 @@
+dataset:
+  # Paths
+  benign_source_dir: "data/benign/"
+  obfuscated_output_dir: "data/obfuscated/"
+  processed_features_dir: "data/processed/"
+  
+  # Obfuscation techniques to apply
+  obfuscation_techniques:
+    - control_flow_flattening
+    - dead_code_insertion
+    - string_encryption
+    - instruction_substitution
+  
+  # Feature extraction settings
+  features:
+    opcode_ngrams:
+      n: [2, 3, 4]  # n-gram sizes
+      max_features: 1000
+    
+    cfg:
+      extract_metrics: true
+      metrics:
+        - num_nodes
+        - num_edges
+        - cyclomatic_complexity
+        - avg_degree
+        - num_loops
+    
+    api_calls:
+      extract: true
+      max_features: 500
+
+  # Dataset split
+  train_ratio: 0.7
+  val_ratio: 0.15
+  test_ratio: 0.15
+
