@@ -118,10 +118,12 @@ class NeuralNetworkModel(BaseModel):
         train_loader = DataLoader(train_dataset, batch_size=self.batch_size, shuffle=True)
         
         val_loader = None
-        if X_val is not None and y_val is not None:
+        if X_val is not None and y_val is not None and len(X_val) > 0:
             val_dataset = FeatureDataset(X_val, y_val)
             val_loader = DataLoader(val_dataset, batch_size=self.batch_size, shuffle=False)
-        
+        elif X_val is not None and y_val is not None and len(X_val) == 0:
+            logger.warning("Validation set is empty, skipping validation during training")
+            
         # Loss and optimizer
         criterion = nn.CrossEntropyLoss()
         optimizer = optim.Adam(self.model.parameters(), lr=self.learning_rate)

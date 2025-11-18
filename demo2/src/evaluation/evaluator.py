@@ -48,6 +48,7 @@ class ModelEvaluator:
         # Predictions
         y_pred = self.model.predict(X_test)
         y_proba = self.model.predict_proba(X_test)
+        positive_proba = self._get_positive_class_proba(y_proba)
         
         # Calculate metrics
         accuracy = accuracy_score(y_test, y_pred)
@@ -57,15 +58,16 @@ class ModelEvaluator:
         
         # ROC AUC
         try:
-            roc_auc = roc_auc_score(y_test, y_proba[:, 1])
-        except:
+            roc_auc = roc_auc_score(y_test, positive_proba)
+        except Exception:
             roc_auc = 0.0
         
-        # Confusion matrix
-        cm = confusion_matrix(y_test, y_pred)
+        # Confusion matrix - ensure it's always 2x2 for binary classification
+        # Using labels=[0, 1] ensures the matrix is always 2x2 even if only one class is present
+        cm = confusion_matrix(y_test, y_pred, labels=[0, 1])
         
-        # False positives and negatives
-        tn, fp, fn, tp = cm.ravel()
+        # Extract confusion matrix values (always 2x2 now)
+        tn, fp, fn, tp = cm[0, 0], cm[0, 1], cm[1, 0], cm[1, 1]
         
         metrics = {
             'accuracy': accuracy,
@@ -96,7 +98,7 @@ class ModelEvaluator:
         self._plot_confusion_matrix(cm, f"{output_dir}/{self.model_name}_confusion_matrix.png")
         
         # Save ROC curve
-        self._plot_roc_curve(y_test, y_proba[:, 1], f"{output_dir}/{self.model_name}_roc_curve.png")
+        self._plot_roc_curve(y_test, positive_proba, f"{output_dir}/{self.model_name}_roc_curve.png")
         
         # Create detailed report
         self._create_detailed_report(metrics, report, f"{output_dir}/{self.model_name}_report.txt")
@@ -121,8 +123,14 @@ class ModelEvaluator:
     
     def _plot_roc_curve(self, y_true: np.ndarray, y_proba: np.ndarray, filepath: str):
         """Plot ROC curve"""
-        fpr, tpr, _ = roc_curve(y_true, y_proba)
-        roc_auc = roc_auc_score(y_true, y_proba)
+        try:
+            fpr, tpr, _ = roc_curve(y_true, y_proba)
+            roc_auc = roc_auc_score(y_true, y_proba)
+        except ValueError as exc:
+            logger.warning(
+                "Unable to plot ROC curve for %s: %s", self.model_name, exc
+            )
+            return
         
         plt.figure(figsize=(8, 6))
         plt.plot(fpr, tpr, label=f'ROC curve (AUC = {roc_auc:.2f})')
@@ -136,6 +144,33 @@ class ModelEvaluator:
         plt.tight_layout()
         plt.savefig(filepath)
         plt.close()
+
+    def _get_positive_class_proba(self, y_proba: np.ndarray) -> np.ndarray:
+        """
+        Return probability estimates for the positive class (label 1).
+        
+        Handles estimators that return probabilities with unexpected shapes,
+        e.g. (n_samples,), (n_samples, 1), or when class order is not [0, 1].
+        """
+        y_proba = np.array(y_proba)
+        
+        if y_proba.ndim == 1:
+            return y_proba
+        
+        if y_proba.shape[1] == 1:
+            return y_proba[:, 0]
+        
+        if hasattr(self.model, "classes_"):
+            classes = list(getattr(self.model, "classes_", []))
+            if len(classes) == y_proba.shape[1]:
+                try:
+                    positive_idx = classes.index(1)
+                    return y_proba[:, positive_idx]
+                except ValueError:
+                    pass
+        
+        # Fallback to the last column (often the positive class)
+        return y_proba[:, -1]
     
     def _create_detailed_report(self, metrics: Dict, report: Dict, filepath: str):
         """Create detailed text report"""

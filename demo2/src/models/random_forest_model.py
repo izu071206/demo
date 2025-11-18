@@ -57,11 +57,13 @@ class RandomForestModel(BaseModel):
             'train_accuracy': train_score
         }
         
-        if X_val is not None and y_val is not None:
+        if X_val is not None and y_val is not None and len(X_val) > 0:
             val_score = self.model.score(X_val, y_val)
             history['val_accuracy'] = val_score
             logger.info(f"Validation accuracy: {val_score:.4f}")
-        
+        elif X_val is not None and y_val is not None and len(X_val) == 0:
+            logger.warning("Validation set is empty, skipping validation evaluation")
+            
         logger.info(f"Training accuracy: {train_score:.4f}")
         
         return history
