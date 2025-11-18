@@ -247,11 +247,21 @@ class NeuralNetworkModel(BaseModel):
         if not self.is_trained:
             raise ValueError("Model not trained yet")
         
+        # Get num_classes from model output layer
+        # The last layer in Sequential is the output layer
+        for module in reversed(self.model.network):
+            if isinstance(module, nn.Linear):
+                num_classes = module.out_features
+                break
+        else:
+            num_classes = 2  # Default fallback
+        
         torch.save({
             'model_state_dict': self.model.state_dict(),
             'input_size': self.input_size,
             'hidden_layers': self.hidden_layers,
-            'dropout': self.dropout
+            'dropout': self.dropout,
+            'num_classes': num_classes
         }, filepath)
         logger.info(f"Model saved to {filepath}")
     
@@ -263,10 +273,41 @@ class NeuralNetworkModel(BaseModel):
         self.hidden_layers = checkpoint['hidden_layers']
         self.dropout = checkpoint['dropout']
         
-        num_classes = 2  # Default
+        # Get num_classes from checkpoint if available, otherwise infer from state_dict
+        if 'num_classes' in checkpoint:
+            num_classes = checkpoint['num_classes']
+        else:
+            # Infer from state_dict - check output layer size
+            state_dict = checkpoint['model_state_dict']
+            # Find the last layer (output layer) weight
+            # Keys are like 'network.0.weight', 'network.1.weight', etc.
+            # The last Linear layer weight will have the output size
+            output_layer_key = None
+            max_index = -1
+            for key in state_dict.keys():
+                if 'weight' in key and 'network' in key:
+                    # Extract index from key like 'network.8.weight'
+                    try:
+                        parts = key.split('.')
+                        if len(parts) >= 3:
+                            idx = int(parts[1])
+                            if idx > max_index:
+                                max_index = idx
+                                output_layer_key = key
+                    except:
+                        pass
+            
+            if output_layer_key:
+                output_weight = state_dict[output_layer_key]
+                num_classes = output_weight.shape[0]  # First dimension is output size
+                logger.info(f"Inferred num_classes={num_classes} from model state_dict")
+            else:
+                num_classes = 2  # Default fallback
+                logger.warning("Could not infer num_classes, using default 2")
+        
         self._create_model(self.input_size, num_classes)
         self.model.load_state_dict(checkpoint['model_state_dict'])
         self.is_trained = True
         
-        logger.info(f"Model loaded from {filepath}")
+        logger.info(f"Model loaded from {filepath} with {num_classes} classes")
 

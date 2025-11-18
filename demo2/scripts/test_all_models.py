@@ -104,7 +104,7 @@ def test_all_models(sample_path: str, output_file: str = None):
     
     # Summary
     print("\n" + "="*60)
-    print("KẾT QUẢ TEST VỚI TẤT CẢ MODELS")
+    print("KET QUA TEST VOI TAT CA MODELS")
     print("="*60)
     print(f"File: {sample_path}")
     print(f"Features extracted: {len(features['features'])}")
@@ -115,8 +115,8 @@ def test_all_models(sample_path: str, output_file: str = None):
             print(f"{result['model_name']}: ERROR - {result['error']}")
         else:
             print(f"{result['model_name']}:")
-            print(f"  Kết quả: {result['prediction']}")
-            print(f"  Độ tin cậy: {result['confidence']*100:.2f}%")
+            print(f"  Ket qua: {result['prediction']}")
+            print(f"  Do tin cay: {result['confidence']*100:.2f}%")
             print(f"  - Benign: {result['probabilities']['benign']*100:.2f}%")
             print(f"  - Obfuscated: {result['probabilities']['obfuscated']*100:.2f}%")
         print()
@@ -127,7 +127,7 @@ def test_all_models(sample_path: str, output_file: str = None):
         benign_count = len(all_predictions) - obfuscated_count
         
         print("-"*60)
-        print("TỔNG KẾT:")
+        print("TONG KET:")
         print(f"  Obfuscated: {obfuscated_count}/{len(all_predictions)} models")
         print(f"  Benign: {benign_count}/{len(all_predictions)} models")
         
@@ -136,7 +136,7 @@ def test_all_models(sample_path: str, output_file: str = None):
         elif benign_count > obfuscated_count:
             consensus = "Benign"
         else:
-            consensus = "Không thống nhất"
+            consensus = "Khong thong nhat"
         
         print(f"  Consensus: {consensus}")
         print("="*60)
