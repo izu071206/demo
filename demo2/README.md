@@ -19,6 +19,8 @@ Dự án này xây dựng một hệ thống phát hiện obfuscation trong mã 
 - **Evaluation**:
   - Báo cáo false positives/negatives
   - Metrics chi tiết (precision, recall, F1-score)
+- **Explainability**:
+  - SHAP-based feature attribution cho dashboard để giải thích vì sao mẫu bị flag
 
 - **Dashboard**: Giao diện web gọn nhẹ để visualize kết quả
 
@@ -48,34 +50,59 @@ demo2/
 ## Cài đặt
 
 ```bash
+# Core dependencies (tree models, dashboard, feature extraction)
 pip install -r requirements.txt
+
+# Tuỳ chọn: hỗ trợ Neural Network (PyTorch)
+pip install -r requirements-dl.txt
 ```
 
 ## Sử dụng
 
-### 1. Tạo dataset
+### 1. Chuẩn bị dữ liệu
+
+- Đọc hướng dẫn tại `data/README.md` để biết cấu trúc thư mục.
+- Tải mẫu thực tế bằng script:
+
+```bash
+python scripts/download_samples.py --tag packed --limit 25
+```
+
+- Thêm các binary sạch (bao gồm cả file đã pack để chống crack) vào `data/benign/<vendor_or_app>/`.
+
+### 2. Tạo dataset
 
 ```bash
 python src/dataset/generate_dataset.py --config config/dataset_config.yaml
 ```
 
-### 2. Train models
+Script sẽ:
+
+- Kiểm tra chất lượng PE (header hợp lệ).
+- Gắn nhãn family dựa trên thư mục (`data/obfuscated/<family>/sample.exe`).
+- Chia train/val/test theo **family split** để hạn chế data leakage.
+- Lưu thêm `data/processed/sample_metadata.csv` và `feature_metadata.json`.
+
+### 3. Train models
 
 ```bash
 python src/models/train.py --config config/train_config.yaml
 ```
 
-### 3. Evaluate models
+### 4. Evaluate models
 
 ```bash
 python src/evaluation/evaluate.py --model models/best_model.pkl --test data/test/
 ```
 
-### 4. Chạy dashboard
+### 5. Chạy dashboard
 
 ```bash
-python src/dashboard/app.py
+python -m src.dashboard.app
 ```
+
+Dashboard hiện đã kết nối trực tiếp tới model thông qua `config/inference_config.yaml`.
+Sửa file này để trỏ tới model tốt nhất (RandomForest/XGBoost/NN) và file metadata tương ứng.
 
 ## Tài Liệu
 

@@ -3,53 +3,67 @@ API Calls Extractor
 Trích xuất API calls từ binary (static analysis)
 """
 
-import pefile
-import yara
-import numpy as np
-from collections import Counter
-from typing import List, Dict, Set
+import json
 import logging
 import os
+from collections import Counter, defaultdict
+from pathlib import Path
+from typing import Dict, List, Optional, Set
+
+import numpy as np
+import pefile
 
 logger = logging.getLogger(__name__)
+
+DEFAULT_API_LIST = Path("config/api_list.yaml")
 
 
 class APIExtractor:
     """Trích xuất API calls từ PE files"""
     
-    def __init__(self):
+    def __init__(self, api_list_path: Optional[str] = None):
         """Initialize API extractor"""
-        self.common_apis = self._load_common_apis()
-    
-    def _load_common_apis(self) -> Set[str]:
-        """Load danh sách các API phổ biến"""
-        # Windows API categories
-        common_apis = {
-            # File operations
-            'CreateFile', 'ReadFile', 'WriteFile', 'DeleteFile', 'CopyFile',
-            'MoveFile', 'FindFirstFile', 'FindNextFile',
-            
-            # Registry
-            'RegOpenKey', 'RegSetValue', 'RegGetValue', 'RegDeleteKey',
-            
-            # Network
-            'socket', 'connect', 'send', 'recv', 'WSAStartup',
-            'InternetOpen', 'InternetConnect', 'HttpOpenRequest',
-            
-            # Process/Thread
-            'CreateProcess', 'CreateThread', 'TerminateProcess',
-            'OpenProcess', 'WriteProcessMemory', 'ReadProcessMemory',
-            
-            # Memory
-            'VirtualAlloc', 'VirtualFree', 'HeapAlloc', 'HeapFree',
-            
-            # Crypto
-            'CryptEncrypt', 'CryptDecrypt', 'CryptCreateHash',
-            
-            # System
-            'GetSystemTime', 'GetTickCount', 'Sleep', 'ExitProcess'
+        self.api_list_path = Path(api_list_path) if api_list_path else DEFAULT_API_LIST
+        self.common_apis = self._load_api_catalog()
+        self.dynamic_indicators = {
+            "LoadLibraryA",
+            "LoadLibraryW",
+            "LoadLibraryExA",
+            "LoadLibraryExW",
+            "GetProcAddress",
+            "GetModuleHandleA",
+            "GetModuleHandleW",
+            "LdrGetProcedureAddress",
         }
-        return common_apis
+    
+    def _load_api_catalog(self) -> Set[str]:
+        """Load danh sách các API phổ biến"""
+        if self.api_list_path and self.api_list_path.exists():
+            try:
+                import yaml
+
+                with self.api_list_path.open("r", encoding="utf-8") as fh:
+                    data = yaml.safe_load(fh)
+                categories = data.get("categories", {})
+                flattened = set()
+                for items in categories.values():
+                    flattened.update(items)
+                logger.info("Loaded %d API entries from %s", len(flattened), self.api_list_path)
+                return flattened
+            except Exception as exc:
+                logger.warning("Failed to load API list from %s: %s", self.api_list_path, exc)
+        
+        logger.info("Falling back to built-in API catalog.")
+        return {
+            'CreateFileA', 'CreateFileW', 'ReadFile', 'WriteFile', 'DeleteFileA', 'DeleteFileW',
+            'CopyFileA', 'CopyFileW', 'MoveFileA', 'MoveFileW', 'FindFirstFileA', 'FindNextFileA',
+            'RegOpenKeyExA', 'RegSetValueExA', 'RegGetValueA', 'RegDeleteKeyA',
+            'socket', 'connect', 'send', 'recv', 'WSAStartup', 'InternetOpenA', 'InternetConnectA',
+            'HttpOpenRequestA', 'CreateProcessA', 'CreateThread', 'TerminateProcess', 'OpenProcess',
+            'WriteProcessMemory', 'ReadProcessMemory', 'VirtualAlloc', 'VirtualFree', 'HeapAlloc',
+            'HeapFree', 'CryptEncrypt', 'CryptDecrypt', 'CryptCreateHash', 'GetSystemTime',
+            'GetTickCount', 'Sleep', 'ExitProcess',
+        }
     
     def extract_imports(self, binary_path: str) -> Dict[str, List[str]]:
         """
@@ -86,7 +100,7 @@ class APIExtractor:
         
         return imports
     
-    def extract_strings(self, binary_path: str, min_length: int = 4) -> List[str]:
+    def extract_strings(self, binary_path: str, min_length: int = 4, chunk_size: int = 1024 * 512) -> List[str]:
         """
         Trích xuất strings từ binary
         
@@ -100,25 +114,48 @@ class APIExtractor:
         strings = []
         
         try:
+            current_chars: List[str] = []
             with open(binary_path, 'rb') as f:
-                data = f.read()
-            
-            current_string = ""
-            for byte in data:
-                if 32 <= byte <= 126:  # Printable ASCII
-                    current_string += chr(byte)
-                else:
-                    if len(current_string) >= min_length:
-                        strings.append(current_string)
-                    current_string = ""
-            
-            if len(current_string) >= min_length:
-                strings.append(current_string)
-        
+                while True:
+                    chunk = f.read(chunk_size)
+                    if not chunk:
+                        break
+                    for byte in chunk:
+                        if 32 <= byte <= 126:  # Printable ASCII
+                            current_chars.append(chr(byte))
+                        else:
+                            if len(current_chars) >= min_length:
+                                strings.append(''.join(current_chars))
+                            current_chars = []
+            if len(current_chars) >= min_length:
+                strings.append(''.join(current_chars))
         except Exception as e:
             logger.warning(f"Error extracting strings from {binary_path}: {e}")
         
         return strings
+
+    def _detect_dynamic_imports(self, imports: Dict[str, List[str]], strings: List[str]) -> Dict[str, float]:
+        counts = defaultdict(int)
+        for dll_functions in imports.values():
+            for func in dll_functions:
+                if func in self.dynamic_indicators:
+                    counts[func] += 1
+
+        lowered_strings = [s.lower() for s in strings]
+        for indicator in self.dynamic_indicators:
+            indicator_lower = indicator.lower()
+            for s in lowered_strings:
+                if indicator_lower in s:
+                    counts[indicator] += 1
+
+        features = {
+            'dynamic_loader_score': float(sum(counts.values())),
+            'dynamic_loader_unique': float(len(counts)),
+            'uses_dynamic_loading': 1.0 if counts else 0.0,
+        }
+        for indicator in self.dynamic_indicators:
+            features[f'call_{indicator.lower()}'] = float(counts.get(indicator, 0))
+        return features
     
     def extract_api_features(self, binary_path: str, max_features: int = 500) -> Dict[str, np.ndarray]:
         """
@@ -165,6 +202,13 @@ class APIExtractor:
         # Metadata
         features['num_imports'] = len(all_apis)
         features['num_dlls'] = len(imports)
+        features['api_entropy'] = float(
+            -np.sum(feature_vector * np.log2(feature_vector + 1e-12))
+        ) if len(feature_vector) else 0.0
+
+        # Dynamic loader heuristics
+        dynamic_features = self._detect_dynamic_imports(imports, strings)
+        features.update(dynamic_features)
         
         return features
 

@@ -23,15 +23,24 @@ wheels/
 .installed.cfg
 *.egg
 
-# Models and data
+# Models and data (keep structure but ignore heavy artifacts)
 models/*.pkl
 models/*.pt
 models/*.h5
-data/raw/*
-data/benign/*
-data/obfuscated/*
-data/processed/*
+models/*.onnx
 results/*
+data/raw/*
+!data/raw/.gitkeep
+!data/raw/README.md
+data/benign/*
+!data/benign/.gitkeep
+data/obfuscated/*
+!data/obfuscated/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+!data/processed/README.md
+data/upload/*
+!data/upload/.gitkeep
 
 # IDE
 .vscode/

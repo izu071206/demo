@@ -17,6 +17,7 @@ training:
     min_samples_split: 5
     min_samples_leaf: 2
     random_state: 42
+    class_weight: balanced
   
   # XGBoost
   xgboost:
@@ -26,6 +27,7 @@ training:
     subsample: 0.8
     colsample_bytree: 0.8
     random_state: 42
+    scale_pos_weight: auto
   
   # Neural Network
   neural_network:

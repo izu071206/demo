@@ -12,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.features.static import OpcodeExtractor, CFGExtractor, APIExtractor
 from src.features.feature_combiner import FeatureCombiner
+from src.features.feature_pipeline import FeaturePipelineConfig, FeaturePipeline
 
 
 class TestFeatureExtraction(unittest.TestCase):
@@ -43,6 +44,25 @@ class TestFeatureExtraction(unittest.TestCase):
         
         self.assertIsInstance(combined, np.ndarray)
         self.assertGreater(len(combined), 0)
+
+    def test_api_extractor_with_real_binary(self):
+        """Ensure API extractor works on actual PE file."""
+        sample_path = Path(__file__).parent / "assets" / "minimal_pe.exe"
+        extractor = APIExtractor(api_list_path="config/api_list.yaml")
+        imports = extractor.extract_imports(str(sample_path))
+        self.assertIsInstance(imports, dict)
+        features = extractor.extract_api_features(str(sample_path))
+        self.assertIn('api_calls', features)
+
+    def test_feature_pipeline_from_config(self):
+        """Pipeline should build and pad vectors consistently."""
+        config = FeaturePipelineConfig.from_dataset_config("config/dataset_config.yaml")
+        config.enable_cfg = False  # skip heavy angr dependency for unit tests
+        pipeline = FeaturePipeline(config)
+        sample_path = Path(__file__).parent / "assets" / "minimal_pe.exe"
+        vector = pipeline.build_feature_vector(str(sample_path))
+        padded = pipeline.pad_vector(vector, 128)
+        self.assertEqual(len(padded), 128)
 
 
 if __name__ == '__main__':

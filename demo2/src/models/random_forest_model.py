@@ -19,7 +19,7 @@ class RandomForestModel(BaseModel):
     
     def __init__(self, n_estimators: int = 100, max_depth: int = 20,
                  min_samples_split: int = 5, min_samples_leaf: int = 2,
-                 random_state: int = 42):
+                 random_state: int = 42, class_weight: Optional[str] = None):
         """
         Args:
             n_estimators: Number of trees
@@ -36,6 +36,7 @@ class RandomForestModel(BaseModel):
             min_samples_split=min_samples_split,
             min_samples_leaf=min_samples_leaf,
             random_state=random_state,
+            class_weight=class_weight,
             n_jobs=-1
         )
     

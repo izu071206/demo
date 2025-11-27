@@ -3,12 +3,20 @@ Dashboard Web Application
 Giao diện gọn nhẹ để visualize kết quả
 """
 
-from flask import Flask, render_template, request, jsonify, send_file
-import os
-import json
-import pandas as pd
-from pathlib import Path
 import logging
+import os
+import sys
+from pathlib import Path
+
+import pandas as pd
+import yaml
+from flask import Flask, jsonify, render_template, request, send_file
+
+ROOT_DIR = Path(__file__).resolve().parents[2]
+if str(ROOT_DIR) not in sys.path:
+    sys.path.insert(0, str(ROOT_DIR))
+
+from src.pipeline import InferencePipeline  # noqa: E402
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'data/upload/'
@@ -16,6 +24,36 @@ app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max file size
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+INFERENCE_PIPELINE = None
+INFERENCE_CONFIG = {}
+
+
+def load_inference_pipeline():
+    global INFERENCE_PIPELINE, INFERENCE_CONFIG
+    config_path = os.getenv('INFERENCE_CONFIG', 'config/inference_config.yaml')
+    config_full = Path(config_path)
+    if not config_full.exists():
+        logger.warning("Inference config %s not found. Dashboard will serve mock data.", config_path)
+        return
+    with config_full.open('r', encoding='utf-8') as f:
+        cfg = yaml.safe_load(f).get('inference', {})
+    try:
+        INFERENCE_PIPELINE = InferencePipeline(
+            model_path=cfg['model_path'],
+            model_type=cfg['model_type'],
+            feature_metadata=cfg['feature_metadata'],
+            enable_explainability=cfg.get('enable_explainability', False),
+            top_features=cfg.get('top_features', 5),
+        )
+        INFERENCE_CONFIG = cfg
+        logger.info("Inference pipeline loaded (%s).", cfg['model_type'])
+    except Exception as exc:
+        logger.error("Failed to initialize inference pipeline: %s", exc)
+        INFERENCE_PIPELINE = None
+
+
+load_inference_pipeline()
 
 
 @app.route('/')
@@ -60,15 +98,24 @@ def predict():
     file.save(filepath)
     
     try:
-        # Load best model (simplified - should load from config)
-        # For now, return mock prediction
-        prediction = {
-            "is_obfuscated": True,
-            "confidence": 0.85,
-            "model": "RandomForest"
-        }
+        if INFERENCE_PIPELINE is None:
+            load_inference_pipeline()
+        if INFERENCE_PIPELINE is None:
+            return jsonify({"error": "Inference pipeline not configured."}), 503
         
-        return jsonify(prediction)
+        result = INFERENCE_PIPELINE.predict_file(filepath)
+        payload = {
+            "is_obfuscated": result['label'] == 1,
+            "prediction": result['prediction'],
+            "confidence": result['confidence'],
+            "probabilities": result['probabilities'],
+            "model": INFERENCE_CONFIG.get('model_name', result['model_type']),
+            "feature_count": result['feature_count'],
+        }
+        if 'top_contributors' in result:
+            payload['top_contributors'] = result['top_contributors']
+        
+        return jsonify(payload)
     
     except Exception as e:
         logger.error(f"Error predicting: {e}")

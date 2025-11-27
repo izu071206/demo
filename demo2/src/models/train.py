@@ -4,13 +4,15 @@ Train tất cả models
 """
 
 import argparse
-import pickle
-import yaml
 import logging
+import pickle
 from pathlib import Path
 
-from src.models import RandomForestModel, XGBoostModel, NeuralNetworkModel
+import numpy as np
+import yaml
+
 from src.evaluation.evaluator import ModelEvaluator
+from src.models import NeuralNetworkModel, RandomForestModel, XGBoostModel
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -23,20 +25,29 @@ def main():
     
     args = parser.parse_args()
     
-    # Load config
-    with open(args.config, 'r') as f:
+    config_path = Path(args.config)
+    if not config_path.exists():
+        logger.error("Config file not found: %s", args.config)
+        return
+    
+    with config_path.open('r', encoding='utf-8') as f:
         config = yaml.safe_load(f)['training']
     
-    # Load data
-    logger.info("Loading training data...")
-    with open(config['train_data'], 'rb') as f:
-        X_train, y_train = pickle.load(f)
+    def load_split(path: str):
+        split_path = Path(path)
+        if not split_path.exists():
+            raise FileNotFoundError(f"Data split not found: {path}")
+        with split_path.open('rb') as handle:
+            return pickle.load(handle)
     
-    with open(config['val_data'], 'rb') as f:
-        X_val, y_val = pickle.load(f)
-    
-    with open(config['test_data'], 'rb') as f:
-        X_test, y_test = pickle.load(f)
+    try:
+        logger.info("Loading training data...")
+        X_train, y_train = load_split(config['train_data'])
+        X_val, y_val = load_split(config['val_data'])
+        X_test, y_test = load_split(config['test_data'])
+    except FileNotFoundError as exc:
+        logger.error(exc)
+        return
     
     logger.info(f"Training set: {X_train.shape}, Validation set: {X_val.shape}, Test set: {X_test.shape}")
     
@@ -49,6 +60,10 @@ def main():
     best_score = 0.0
     best_model_name = None
     
+    pos_count = int(np.sum(y_train == 1))
+    neg_count = int(len(y_train) - pos_count)
+    imbalance_ratio = (neg_count / max(pos_count, 1)) if pos_count > 0 else 1.0
+    
     for model_name in models_to_train:
         logger.info(f"\n{'='*50}")
         logger.info(f"Training {model_name}...")
@@ -56,9 +71,13 @@ def main():
         
         # Create model
         if model_name == 'random_forest':
-            model = RandomForestModel(**config['random_forest'])
+            rf_params = config['random_forest'].copy()
+            model = RandomForestModel(**rf_params)
         elif model_name == 'xgboost':
-            model = XGBoostModel(**config['xgboost'])
+            xgb_params = config['xgboost'].copy()
+            if xgb_params.get('scale_pos_weight') == 'auto':
+                xgb_params['scale_pos_weight'] = imbalance_ratio
+            model = XGBoostModel(**xgb_params)
         elif model_name == 'neural_network':
             model = NeuralNetworkModel(**config['neural_network'])
         else:
@@ -66,7 +85,11 @@ def main():
             continue
         
         # Train
-        history = model.train(X_train, y_train, X_val, y_val)
+        try:
+            history = model.train(X_train, y_train, X_val, y_val)
+        except Exception as exc:
+            logger.error("Training failed for %s: %s", model_name, exc)
+            continue
         
         # Save model
         model_path = f"{config['model_save_dir']}/{model_name}_model"

@@ -29,6 +29,7 @@ dataset:
     api_calls:
       extract: true
       max_features: 500
+      api_list_path: "config/api_list.yaml"
 
   # Dataset split
   train_ratio: 0.7
