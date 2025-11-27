@@ -123,6 +123,21 @@
             padding: 20px;
             border-radius: 10px;
             text-align: center;
+            animation: fadeIn 0.5s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .info-badge {
+            display: inline-block;
+            padding: 5px 10px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 15px;
+            font-size: 0.9em;
+            margin: 5px;
         }
         
         .prediction-result.obfuscated {
@@ -162,14 +177,18 @@
         <div class="header">
             <h1>🔍 Obfuscation Detection System</h1>
             <p>Phát hiện rối mã trong mã độc bằng Machine Learning</p>
+            <div id="statusIndicator" style="margin-top: 10px; padding: 10px; display: inline-block; background: rgba(255,255,255,0.2); border-radius: 20px;">
+                <span id="statusText">Đang tải...</span>
+            </div>
         </div>
         
         <div class="card">
             <h2>Upload File để Phân Tích</h2>
             <div class="upload-area" onclick="document.getElementById('fileInput').click()">
                 <p>📁 Click để chọn file hoặc kéo thả file vào đây</p>
-                <input type="file" id="fileInput" accept=".exe,.dll,.bin">
+                <input type="file" id="fileInput" accept=".exe,.dll,.bin" multiple>
                 <button class="btn" onclick="analyzeFile()" style="margin-top: 20px;">Phân Tích</button>
+                <button class="btn" onclick="analyzeBatch()" style="margin-top: 10px; background: #51cf66;">Phân Tích Nhiều File</button>
             </div>
             <div id="predictionResult"></div>
             <div class="loading" id="loading">
@@ -196,8 +215,93 @@
     <script>
         // Load results on page load
         window.onload = function() {
+            checkStatus();
             loadResults();
+            loadStats();
+            loadHistory();
         };
+        
+        function loadStats() {
+            fetch('/api/stats')
+                .then(response => response.json())
+                .then(data => {
+                    updateStatsDisplay(data);
+                })
+                .catch(error => console.error('Error loading stats:', error));
+        }
+        
+        function updateStatsDisplay(stats) {
+            // Update stats in header or create stats section
+            const statsHtml = `
+                <div style="margin-top: 20px; font-size: 0.9em;">
+                    Tổng: ${stats.total_predictions} | Rối mã: ${stats.obfuscated_count} | Bình thường: ${stats.benign_count}
+                    ${stats.errors > 0 ? ` | Lỗi: ${stats.errors}` : ''}
+                </div>
+            `;
+            const existingStats = document.getElementById('statsDisplay');
+            if (existingStats) {
+                existingStats.innerHTML = statsHtml;
+            } else {
+                const header = document.querySelector('.header');
+                const statsDiv = document.createElement('div');
+                statsDiv.id = 'statsDisplay';
+                statsDiv.innerHTML = statsHtml;
+                header.appendChild(statsDiv);
+            }
+        }
+        
+        function loadHistory() {
+            fetch('/api/history?limit=5')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.history && data.history.length > 0) {
+                        displayRecentHistory(data.history);
+                    }
+                })
+                .catch(error => console.error('Error loading history:', error));
+        }
+        
+        function displayRecentHistory(history) {
+            // Add recent predictions section if needed
+            const container = document.querySelector('.container');
+            let historySection = document.getElementById('recentHistory');
+            
+            if (!historySection) {
+                historySection = document.createElement('div');
+                historySection.id = 'recentHistory';
+                historySection.className = 'card';
+                historySection.innerHTML = '<h2>Lịch Sử Gần Đây</h2><div id="historyList"></div>';
+                container.insertBefore(historySection, container.firstChild.nextSibling);
+            }
+            
+            const historyList = document.getElementById('historyList');
+            historyList.innerHTML = history.map(item => `
+                <div style="padding: 10px; margin: 5px 0; background: #f5f5f5; border-radius: 5px; border-left: 4px solid ${item.is_obfuscated ? '#ff6b6b' : '#51cf66'};">
+                    <strong>${item.filename}</strong> - 
+                    ${item.is_obfuscated ? '⚠️ Rối mã' : '✅ Bình thường'} 
+                    (${(item.confidence * 100).toFixed(1)}%) - 
+                    <small>${new Date(item.timestamp).toLocaleString('vi-VN')}</small>
+                </div>
+            `).join('');
+        }
+        
+        function checkStatus() {
+            fetch('/api/status')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'ready') {
+                        document.getElementById('statusText').textContent = `✅ Sẵn sàng - ${data.model}`;
+                        document.getElementById('statusIndicator').style.background = 'rgba(81, 207, 102, 0.3)';
+                    } else {
+                        document.getElementById('statusText').textContent = '⚠️ ' + data.message;
+                        document.getElementById('statusIndicator').style.background = 'rgba(255, 193, 7, 0.3)';
+                    }
+                })
+                .catch(() => {
+                    document.getElementById('statusText').textContent = '⚠️ Đang khởi động...';
+                    document.getElementById('statusIndicator').style.background = 'rgba(255, 193, 7, 0.3)';
+                });
+        }
         
         function loadResults() {
             fetch('/api/results')
@@ -272,30 +376,226 @@
                 method: 'POST',
                 body: formData
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.error || `HTTP error! status: ${response.status}`);
+                    });
+                }
+                return response.json();
+            })
             .then(data => {
                 document.getElementById('loading').style.display = 'none';
                 displayPrediction(data);
+                // Refresh stats and history after prediction
+                loadStats();
+                loadHistory();
             })
             .catch(error => {
                 document.getElementById('loading').style.display = 'none';
                 console.error('Error:', error);
-                alert('Lỗi khi phân tích file!');
+                const resultDiv = document.getElementById('predictionResult');
+                resultDiv.className = 'prediction-result';
+                resultDiv.style.background = '#ff6b6b';
+                resultDiv.style.color = 'white';
+                resultDiv.innerHTML = `
+                    <h3>❌ Lỗi</h3>
+                    <p>${error.message || 'Không thể phân tích file. Vui lòng thử lại!'}</p>
+                `;
             });
         }
         
         function displayPrediction(data) {
             const resultDiv = document.getElementById('predictionResult');
-            const className = data.is_obfuscated ? 'obfuscated' : 'benign';
-            const label = data.is_obfuscated ? 'RỐI MÃ' : 'BÌNH THƯỜNG';
+            
+            // Handle errors
+            if (data.error) {
+                resultDiv.className = 'prediction-result';
+                resultDiv.style.background = '#ff6b6b';
+                resultDiv.style.color = 'white';
+                resultDiv.innerHTML = `
+                    <h3>❌ Lỗi</h3>
+                    <p>${data.error}</p>
+                `;
+                return;
+            }
+            
+            // Determine is_obfuscated - check multiple sources for consistency
+            let is_obfuscated = data.is_obfuscated;
+            
+            // Double-check with prediction string if available
+            if (data.prediction) {
+                const predLower = data.prediction.toLowerCase();
+                if (predLower.includes('obfuscated') || predLower.includes('rối mã')) {
+                    is_obfuscated = true;
+                } else if (predLower.includes('benign') || predLower.includes('bình thường')) {
+                    is_obfuscated = false;
+                }
+            }
+            
+            // Also check probabilities if is_obfuscated seems wrong
+            if (data.probabilities) {
+                const probObf = data.probabilities.obfuscated || 0;
+                const probBen = data.probabilities.benign || 0;
+                // If probability suggests different, use probability (but log warning)
+                if (probObf > probBen && !is_obfuscated) {
+                    console.warn('Probability suggests obfuscated but label says benign. Using probability.');
+                    is_obfuscated = true;
+                } else if (probBen > probObf && is_obfuscated) {
+                    console.warn('Probability suggests benign but label says obfuscated. Using probability.');
+                    is_obfuscated = false;
+                }
+            }
+            
+            const className = is_obfuscated ? 'obfuscated' : 'benign';
+            const label = is_obfuscated ? 'RỐI MÃ ⚠️' : 'BÌNH THƯỜNG ✅';
+            const emoji = is_obfuscated ? '⚠️' : '✅';
+            
+            // Log for debugging
+            console.log('Display prediction:', {
+                'is_obfuscated': is_obfuscated,
+                'prediction': data.prediction,
+                'label': data.label,
+                'probabilities': data.probabilities
+            });
+            
+            let html = `
+                <h3>Kết Quả Phân Tích ${emoji}</h3>
+                <div style="font-size: 2em; margin: 20px 0; font-weight: bold;">${label}</div>
+                <div style="margin: 20px 0;">
+                    <p><strong>Độ tin cậy:</strong> ${(data.confidence * 100).toFixed(2)}%</p>
+                    <p><strong>Model sử dụng:</strong> ${data.model}</p>
+                    <p><strong>Số features:</strong> ${data.feature_count || 'N/A'}</p>
+                </div>
+                <div style="margin-top: 20px;">
+                    <p><strong>Xác suất:</strong></p>
+                    <div style="display: flex; gap: 20px; margin-top: 10px;">
+                        <div style="flex: 1; padding: 10px; background: rgba(255,255,255,0.2); border-radius: 5px; ${(data.probabilities?.benign || 0) > (data.probabilities?.obfuscated || 0) ? 'border: 2px solid #51cf66;' : ''}">
+                            <strong>Bình thường:</strong> ${(data.probabilities?.benign * 100 || 0).toFixed(2)}%
+                        </div>
+                        <div style="flex: 1; padding: 10px; background: rgba(255,255,255,0.2); border-radius: 5px; ${(data.probabilities?.obfuscated || 0) > (data.probabilities?.benign || 0) ? 'border: 2px solid #ff6b6b;' : ''}">
+                            <strong>Rối mã:</strong> ${(data.probabilities?.obfuscated * 100 || 0).toFixed(2)}%
+                        </div>
+                    </div>
+                    ${data.prediction ? `<p style="margin-top: 10px; font-size: 0.9em; opacity: 0.8;"><em>Model prediction: ${data.prediction} (Label: ${data.label || 'N/A'})</em></p>` : ''}
+                </div>
+            `;
+            
+            // Add SHAP explanations if available
+            if (data.top_contributors && data.top_contributors.length > 0) {
+                html += `
+                    <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid rgba(255,255,255,0.3);">
+                        <h4>🔍 Top Features ảnh hưởng (SHAP):</h4>
+                        <ul style="list-style: none; padding: 0; margin-top: 10px;">
+                `;
+                data.top_contributors.forEach(item => {
+                    const impactColor = item.impact > 0 ? '#ff4444' : '#44ff44';
+                    html += `
+                        <li style="padding: 8px; margin: 5px 0; background: rgba(255,255,255,0.1); border-radius: 5px;">
+                            <strong>${item.feature}:</strong> 
+                            <span style="color: ${impactColor};">${item.impact > 0 ? '+' : ''}${item.impact.toFixed(4)}</span>
+                        </li>
+                    `;
+                });
+                html += `</ul></div>`;
+            }
             
             resultDiv.className = `prediction-result ${className}`;
-            resultDiv.innerHTML = `
-                <h3>Kết Quả Phân Tích</h3>
-                <div style="font-size: 2em; margin: 20px 0;">${label}</div>
-                <p>Độ tin cậy: ${(data.confidence * 100).toFixed(2)}%</p>
-                <p>Model sử dụng: ${data.model}</p>
+            resultDiv.innerHTML = html;
+        }
+        
+        function analyzeBatch() {
+            const fileInput = document.getElementById('fileInput');
+            const files = fileInput.files;
+            
+            if (!files || files.length === 0) {
+                alert('Vui lòng chọn ít nhất một file!');
+                return;
+            }
+            
+            const formData = new FormData();
+            for (let i = 0; i < files.length; i++) {
+                formData.append('files', files[i]);
+            }
+            
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('predictionResult').innerHTML = '';
+            
+            fetch('/api/predict/batch', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.error || `HTTP error! status: ${response.status}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                document.getElementById('loading').style.display = 'none';
+                displayBatchResults(data);
+                loadStats();
+                loadHistory();
+            })
+            .catch(error => {
+                document.getElementById('loading').style.display = 'none';
+                console.error('Error:', error);
+                const resultDiv = document.getElementById('predictionResult');
+                resultDiv.className = 'prediction-result';
+                resultDiv.style.background = '#ff6b6b';
+                resultDiv.style.color = 'white';
+                resultDiv.innerHTML = `
+                    <h3>❌ Lỗi</h3>
+                    <p>${error.message || 'Không thể phân tích files. Vui lòng thử lại!'}</p>
+                `;
+            });
+        }
+        
+        function displayBatchResults(data) {
+            const resultDiv = document.getElementById('predictionResult');
+            resultDiv.className = 'prediction-result';
+            resultDiv.style.background = '#667eea';
+            resultDiv.style.color = 'white';
+            
+            let html = `<h3>📊 Kết Quả Batch (${data.count} files)</h3>`;
+            
+            const obfuscated = data.results.filter(r => r.is_obfuscated && !r.error).length;
+            const benign = data.results.filter(r => !r.is_obfuscated && !r.error).length;
+            const errors = data.results.filter(r => r.error).length;
+            
+            html += `
+                <div style="margin: 20px 0;">
+                    <p><strong>Tổng:</strong> ${data.count} files</p>
+                    <p><strong>⚠️ Rối mã:</strong> ${obfuscated}</p>
+                    <p><strong>✅ Bình thường:</strong> ${benign}</p>
+                    ${errors > 0 ? `<p><strong>❌ Lỗi:</strong> ${errors}</p>` : ''}
+                </div>
+                <div style="max-height: 400px; overflow-y: auto; text-align: left;">
             `;
+            
+            data.results.forEach(result => {
+                if (result.error) {
+                    html += `
+                        <div style="padding: 10px; margin: 5px 0; background: rgba(255,107,107,0.3); border-radius: 5px;">
+                            <strong>${result.filename}</strong> - ❌ Lỗi: ${result.error}
+                        </div>
+                    `;
+                } else {
+                    const className = result.is_obfuscated ? 'obfuscated' : 'benign';
+                    html += `
+                        <div style="padding: 10px; margin: 5px 0; background: rgba(255,255,255,0.2); border-radius: 5px;">
+                            <strong>${result.filename}</strong> - 
+                            ${result.is_obfuscated ? '⚠️ Rối mã' : '✅ Bình thường'} 
+                            (${(result.confidence * 100).toFixed(1)}%)
+                        </div>
+                    `;
+                }
+            });
+            
+            html += `</div>`;
+            resultDiv.innerHTML = html;
         }
     </script>
 </body>

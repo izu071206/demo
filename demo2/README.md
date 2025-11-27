@@ -101,8 +101,45 @@ python src/evaluation/evaluate.py --model models/best_model.pkl --test data/test
 python -m src.dashboard.app
 ```
 
-Dashboard hiện đã kết nối trực tiếp tới model thông qua `config/inference_config.yaml`.
-Sửa file này để trỏ tới model tốt nhất (RandomForest/XGBoost/NN) và file metadata tương ứng.
+Hoặc:
+
+```bash
+python main.py dashboard
+```
+
+Sau đó mở trình duyệt tại: **http://localhost:5000**
+
+**Tính năng Dashboard:**
+- Upload và phân tích file binary (.exe, .dll, .bin)
+- Hiển thị kết quả prediction (Obfuscated/Benign) với độ tin cậy
+- Xem xác suất cho từng class
+- Giải thích SHAP (top features ảnh hưởng) - nếu được bật
+- Xem metrics và biểu đồ đánh giá models
+
+**Cấu hình:**
+Dashboard kết nối trực tiếp tới model thông qua `config/inference_config.yaml`.
+Sửa file này để:
+- Trỏ tới model tốt nhất (RandomForest/XGBoost/NN)
+- Chỉ định file metadata (`feature_metadata.json`)
+- Bật/tắt explainability (SHAP)
+
+**Lưu ý:** Dashboard tự động align features với model's expected dimension để tránh lỗi feature mismatch.
+
+**API Endpoints:**
+
+Dashboard cung cấp RESTful API đầy đủ:
+- `/api/predict` - Prediction cho single file
+- `/api/predict/batch` - Batch prediction cho nhiều files
+- `/api/status` - Kiểm tra trạng thái pipeline
+- `/api/health` - Health check endpoint
+- `/api/stats` - Thống kê dashboard
+- `/api/history` - Lịch sử predictions
+- `/api/models` - Danh sách models có sẵn
+- `/api/config` - Cấu hình inference
+- `/api/metrics` - Metrics chi tiết của models
+- `/api/features/info` - Thông tin về feature extraction
+
+Xem chi tiết: [src/dashboard/api_docs.md](src/dashboard/api_docs.md)
 
 ## Tài Liệu
 

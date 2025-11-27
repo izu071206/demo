@@ -1,0 +1,48 @@
+[
+  {
+    "id": 1764255166583,
+    "filename": "malware01.bin",
+    "is_obfuscated": true,
+    "prediction": "Obfuscated",
+    "label": 1,
+    "confidence": 1.0,
+    "probabilities": {
+      "benign": 0.0,
+      "obfuscated": 1.0
+    },
+    "model": "RandomForest (Obfuscation Detector)",
+    "feature_count": 191,
+    "processing_time": 28.796,
+    "timestamp": "2025-11-27T21:52:46.584835"
+  },
+  {
+    "id": 1764254649264,
+    "filename": "MrsMajor2.0.exe",
+    "is_obfuscated": false,
+    "prediction": "Benign",
+    "confidence": 1.0,
+    "probabilities": {
+      "benign": 0.0,
+      "obfuscated": 1.0
+    },
+    "model": "RandomForest (Obfuscation Detector)",
+    "feature_count": 191,
+    "processing_time": 15.335,
+    "timestamp": "2025-11-27T21:44:09.266023"
+  },
+  {
+    "id": 1764254573657,
+    "filename": "malware01.bin",
+    "is_obfuscated": false,
+    "prediction": "Benign",
+    "confidence": 1.0,
+    "probabilities": {
+      "benign": 0.0,
+      "obfuscated": 1.0
+    },
+    "model": "RandomForest (Obfuscation Detector)",
+    "feature_count": 191,
+    "processing_time": 34.111,
+    "timestamp": "2025-11-27T21:42:53.660906"
+  }
+]

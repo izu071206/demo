@@ -8,7 +8,7 @@ training:
   models:
     - random_forest
     - xgboost
-    - neural_network
+    # - neural_network  # Skipped due to torch DLL issue on Windows
   
   # Random Forest
   random_forest:

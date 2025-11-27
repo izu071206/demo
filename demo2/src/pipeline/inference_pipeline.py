@@ -30,10 +30,11 @@ class InferencePipeline:
         self.model_path = model_path
         self.model_type = model_type
         self.feature_pipeline = FeaturePipeline.from_metadata(feature_metadata)
-        self.expected_dim = self.feature_pipeline.expected_dim
         self.enable_explainability = enable_explainability
         self.top_features = top_features
         self.model = self._load_model()
+        # Get expected dimension from model (more reliable than metadata)
+        self.expected_dim = self._get_model_expected_dim()
         self.explainer = self._init_explainer() if enable_explainability else None
 
     def _load_model(self):
@@ -48,6 +49,41 @@ class InferencePipeline:
             raise ValueError(f"Unsupported model type: {self.model_type}")
         loader.load(self.model_path)
         return loader
+    
+    def _get_model_expected_dim(self) -> int:
+        """Get expected feature dimension from the loaded model."""
+        try:
+            if self.model_type == 'random_forest':
+                if hasattr(self.model.model, 'n_features_in_'):
+                    return int(self.model.model.n_features_in_)
+                elif hasattr(self.model.model, 'feature_importances_'):
+                    return len(self.model.model.feature_importances_)
+            elif self.model_type == 'xgboost':
+                try:
+                    return int(self.model.model.get_booster().num_feature())
+                except:
+                    if hasattr(self.model.model, 'feature_importances_'):
+                        return len(self.model.model.feature_importances_)
+            elif self.model_type == 'neural_network':
+                if hasattr(self.model, 'input_size'):
+                    return int(self.model.input_size)
+                # Try to get from first layer
+                try:
+                    first_layer = list(self.model.model.modules())[1]
+                    if hasattr(first_layer, 'in_features'):
+                        return int(first_layer.in_features)
+                except:
+                    pass
+        except Exception as exc:
+            logger.warning(f"Could not get expected dimension from model: {exc}")
+        
+        # Fall back to metadata
+        if self.feature_pipeline.expected_dim:
+            logger.info(f"Using expected dimension from metadata: {self.feature_pipeline.expected_dim}")
+            return self.feature_pipeline.expected_dim
+        
+        logger.warning("Could not determine expected dimension. Using extracted features as-is.")
+        return None
 
     def _init_explainer(self):
         try:
@@ -72,7 +108,15 @@ class InferencePipeline:
         if vector.size == 0:
             raise ValueError("No features extracted from file.")
 
-        expected_dim = self.expected_dim or len(vector)
+        # Use model's expected dimension
+        expected_dim = self.expected_dim
+        if expected_dim is None:
+            expected_dim = len(vector)
+            logger.warning(f"No expected dimension set. Using extracted dimension: {expected_dim}")
+        else:
+            logger.info(f"Aligning features: extracted {len(vector)} features, model expects {expected_dim}")
+        
+        # Align features to match model's expected dimension
         padded_vector = self.feature_pipeline.pad_vector(vector, expected_dim)
 
         if len(feature_names) < expected_dim:
@@ -84,7 +128,8 @@ class InferencePipeline:
         return {
             'vector': padded_vector.reshape(1, -1),
             'feature_names': feature_names,
-            'raw_dim': len(vector)
+            'raw_dim': len(vector),
+            'aligned_dim': len(padded_vector)
         }
 
     def _format_probabilities(self, probs: np.ndarray) -> Dict[str, float]:
@@ -124,10 +169,32 @@ class InferencePipeline:
         probabilities = self.model.predict_proba(vector)
         prob_map = self._format_probabilities(probabilities)
         confidence = max(prob_map.values())
+        
+        # Determine final prediction based on probabilities (more reliable than label)
+        # This handles cases where label might be wrong due to class order issues
+        prob_obf = prob_map.get('obfuscated', 0.0)
+        prob_ben = prob_map.get('benign', 0.0)
+        
+        # Use probabilities to determine the actual prediction
+        is_obfuscated_from_probs = prob_obf > prob_ben
+        is_obfuscated_from_label = (prediction == 1)
+        
+        # Prefer probability-based decision, but log if there's a mismatch
+        if is_obfuscated_from_probs != is_obfuscated_from_label:
+            logger.warning(
+                f"Label/Probability mismatch! Label={prediction} (label says {'obfuscated' if is_obfuscated_from_label else 'benign'}), "
+                f"but probabilities: benign={prob_ben:.4f}, obfuscated={prob_obf:.4f}. Using probability-based decision."
+            )
+        
+        # Use probability-based decision as the final truth
+        final_is_obfuscated = is_obfuscated_from_probs
+        final_prediction = 'Obfuscated' if final_is_obfuscated else 'Benign'
+        final_label = 1 if final_is_obfuscated else 0
 
         result = {
-            'prediction': 'Obfuscated' if prediction == 1 else 'Benign',
-            'label': int(prediction),
+            'prediction': final_prediction,
+            'label': int(final_label),
+            'label_raw': int(prediction),  # Keep raw label for debugging
             'confidence': confidence,
             'probabilities': prob_map,
             'feature_count': features['raw_dim'],

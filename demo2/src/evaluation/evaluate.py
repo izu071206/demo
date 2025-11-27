@@ -8,7 +8,11 @@ import yaml
 import logging
 from pathlib import Path
 
-from src.models import RandomForestModel, XGBoostModel, NeuralNetworkModel
+from src.models import RandomForestModel, XGBoostModel
+try:
+    from src.models import NeuralNetworkModel
+except (ImportError, AttributeError):
+    NeuralNetworkModel = None
 from src.evaluation.evaluator import ModelEvaluator
 
 logging.basicConfig(level=logging.INFO)
@@ -22,6 +26,8 @@ def load_model(model_type: str, model_path: str):
     elif model_type == 'xgboost':
         model = XGBoostModel()
     elif model_type == 'neural_network':
+        if NeuralNetworkModel is None:
+            raise ValueError("Neural Network model is not available (torch DLL issue)")
         model = NeuralNetworkModel()
     else:
         raise ValueError(f"Unknown model type: {model_type}")

@@ -12,7 +12,11 @@ import numpy as np
 import yaml
 
 from src.evaluation.evaluator import ModelEvaluator
-from src.models import NeuralNetworkModel, RandomForestModel, XGBoostModel
+from src.models import RandomForestModel, XGBoostModel
+try:
+    from src.models import NeuralNetworkModel
+except (ImportError, AttributeError):
+    NeuralNetworkModel = None
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -79,6 +83,9 @@ def main():
                 xgb_params['scale_pos_weight'] = imbalance_ratio
             model = XGBoostModel(**xgb_params)
         elif model_name == 'neural_network':
+            if NeuralNetworkModel is None:
+                logger.warning("Neural Network model is not available (torch DLL issue). Skipping...")
+                continue
             model = NeuralNetworkModel(**config['neural_network'])
         else:
             logger.warning(f"Unknown model: {model_name}, skipping...")
