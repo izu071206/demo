@@ -1,196 +1,70 @@
-"""
-Model Evaluator
-Đánh giá models và tạo báo cáo false positives/negatives
-"""
-
+import os
+import json
 import numpy as np
-import pandas as pd
-from sklearn.metrics import (
-    accuracy_score, precision_score, recall_score, f1_score,
-    confusion_matrix, classification_report, roc_auc_score, roc_curve
-)
-from typing import Dict, Tuple
-import logging
-import matplotlib.pyplot as plt
-import seaborn as sns
-from pathlib import Path
-
-logger = logging.getLogger(__name__)
-
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, roc_curve, auc
 
 class ModelEvaluator:
-    """Đánh giá ML models"""
-    
-    def __init__(self, model, model_name: str):
+    def __init__(self, output_dir="data/evaluation_results"):
         """
-        Args:
-            model: Trained model (must have predict and predict_proba methods)
-            model_name: Name of the model
+        Khởi tạo bộ đánh giá, tự động tạo thư mục lưu kết quả.
         """
-        self.model = model
-        self.model_name = model_name
-    
-    def evaluate(self, X_test: np.ndarray, y_test: np.ndarray,
-                  output_dir: str = "results/") -> Dict:
+        self.output_dir = output_dir
+        os.makedirs(self.output_dir, exist_ok=True)
+
+    def evaluate(self, model, X_test, y_test, model_name="model"):
         """
-        Đánh giá model trên test set
-        
-        Args:
-            X_test: Test features
-            y_test: Test labels
-            output_dir: Directory to save results
-            
-        Returns:
-            Dictionary of metrics
+        Đánh giá model và lưu metrics ra file JSON.
         """
-        logger.info(f"Evaluating {self.model_name}...")
+        print(f"[*] Starting evaluation for {model_name}...")
         
-        # Predictions
-        y_pred = self.model.predict(X_test)
-        y_proba = self.model.predict_proba(X_test)
-        positive_proba = self._get_positive_class_proba(y_proba)
+        # 1. Dự đoán nhãn
+        y_pred = model.predict(X_test)
         
-        # Calculate metrics
-        accuracy = accuracy_score(y_test, y_pred)
-        precision = precision_score(y_test, y_pred, average='binary', zero_division=0)
-        recall = recall_score(y_test, y_pred, average='binary', zero_division=0)
-        f1 = f1_score(y_test, y_pred, average='binary', zero_division=0)
-        
-        # ROC AUC
-        try:
-            roc_auc = roc_auc_score(y_test, positive_proba)
-        except Exception:
-            roc_auc = 0.0
-        
-        # Confusion matrix - ensure it's always 2x2 for binary classification
-        # Using labels=[0, 1] ensures the matrix is always 2x2 even if only one class is present
-        cm = confusion_matrix(y_test, y_pred, labels=[0, 1])
-        
-        # Extract confusion matrix values (always 2x2 now)
-        tn, fp, fn, tp = cm[0, 0], cm[0, 1], cm[1, 0], cm[1, 1]
-        
+        # 2. Dự đoán xác suất (để vẽ ROC curve)
+        # Kiểm tra xem model có hỗ trợ predict_proba không
+        if hasattr(model, "predict_proba"):
+            y_proba = model.predict_proba(X_test)
+            # Lấy cột xác suất của lớp 1 (Malware/Obfuscated)
+            y_score = y_proba[:, 1] if y_proba.shape[1] > 1 else y_proba[:, 0]
+        else:
+            # Fallback nếu không có predict_proba (dùng chính y_pred)
+            y_score = y_pred
+
+        # 3. Tính toán các chỉ số cơ bản
         metrics = {
-            'accuracy': accuracy,
-            'precision': precision,
-            'recall': recall,
-            'f1_score': f1,
-            'roc_auc': roc_auc,
-            'true_positives': int(tp),
-            'true_negatives': int(tn),
-            'false_positives': int(fp),
-            'false_negatives': int(fn),
-            'confusion_matrix': cm.tolist()
+            "accuracy": round(float(accuracy_score(y_test, y_pred)), 4),
+            "precision": round(float(precision_score(y_test, y_pred, zero_division=0)), 4),
+            "recall": round(float(recall_score(y_test, y_pred, zero_division=0)), 4),
+            "f1_score": round(float(f1_score(y_test, y_pred, zero_division=0)), 4)
         }
-        
-        # Save results
-        Path(output_dir).mkdir(parents=True, exist_ok=True)
-        
-        # Save metrics to CSV
-        metrics_df = pd.DataFrame([metrics])
-        metrics_df.to_csv(f"{output_dir}/{self.model_name}_metrics.csv", index=False)
-        
-        # Save classification report
-        report = classification_report(y_test, y_pred, output_dict=True)
-        report_df = pd.DataFrame(report).transpose()
-        report_df.to_csv(f"{output_dir}/{self.model_name}_classification_report.csv")
-        
-        # Save confusion matrix plot
-        self._plot_confusion_matrix(cm, f"{output_dir}/{self.model_name}_confusion_matrix.png")
-        
-        # Save ROC curve
-        self._plot_roc_curve(y_test, positive_proba, f"{output_dir}/{self.model_name}_roc_curve.png")
-        
-        # Create detailed report
-        self._create_detailed_report(metrics, report, f"{output_dir}/{self.model_name}_report.txt")
-        
-        logger.info(f"Evaluation completed. Accuracy: {accuracy:.4f}, F1: {f1:.4f}")
-        logger.info(f"False Positives: {fp}, False Negatives: {fn}")
-        
-        return metrics
-    
-    def _plot_confusion_matrix(self, cm: np.ndarray, filepath: str):
-        """Plot confusion matrix"""
-        plt.figure(figsize=(8, 6))
-        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
-                   xticklabels=['Benign', 'Obfuscated'],
-                   yticklabels=['Benign', 'Obfuscated'])
-        plt.title(f'Confusion Matrix - {self.model_name}')
-        plt.ylabel('True Label')
-        plt.xlabel('Predicted Label')
-        plt.tight_layout()
-        plt.savefig(filepath)
-        plt.close()
-    
-    def _plot_roc_curve(self, y_true: np.ndarray, y_proba: np.ndarray, filepath: str):
-        """Plot ROC curve"""
-        try:
-            fpr, tpr, _ = roc_curve(y_true, y_proba)
-            roc_auc = roc_auc_score(y_true, y_proba)
-        except ValueError as exc:
-            logger.warning(
-                "Unable to plot ROC curve for %s: %s", self.model_name, exc
-            )
-            return
-        
-        plt.figure(figsize=(8, 6))
-        plt.plot(fpr, tpr, label=f'ROC curve (AUC = {roc_auc:.2f})')
-        plt.plot([0, 1], [0, 1], 'k--', label='Random')
-        plt.xlim([0.0, 1.0])
-        plt.ylim([0.0, 1.05])
-        plt.xlabel('False Positive Rate')
-        plt.ylabel('True Positive Rate')
-        plt.title(f'ROC Curve - {self.model_name}')
-        plt.legend(loc="lower right")
-        plt.tight_layout()
-        plt.savefig(filepath)
-        plt.close()
 
-    def _get_positive_class_proba(self, y_proba: np.ndarray) -> np.ndarray:
-        """
-        Return probability estimates for the positive class (label 1).
-        
-        Handles estimators that return probabilities with unexpected shapes,
-        e.g. (n_samples,), (n_samples, 1), or when class order is not [0, 1].
-        """
-        y_proba = np.array(y_proba)
-        
-        if y_proba.ndim == 1:
-            return y_proba
-        
-        if y_proba.shape[1] == 1:
-            return y_proba[:, 0]
-        
-        if hasattr(self.model, "classes_"):
-            classes = list(getattr(self.model, "classes_", []))
-            if len(classes) == y_proba.shape[1]:
-                try:
-                    positive_idx = classes.index(1)
-                    return y_proba[:, positive_idx]
-                except ValueError:
-                    pass
-        
-        # Fallback to the last column (often the positive class)
-        return y_proba[:, -1]
-    
-    def _create_detailed_report(self, metrics: Dict, report: Dict, filepath: str):
-        """Create detailed text report"""
-        with open(filepath, 'w') as f:
-            f.write(f"Evaluation Report - {self.model_name}\n")
-            f.write("=" * 50 + "\n\n")
-            
-            f.write("Metrics:\n")
-            f.write(f"  Accuracy:  {metrics['accuracy']:.4f}\n")
-            f.write(f"  Precision: {metrics['precision']:.4f}\n")
-            f.write(f"  Recall:    {metrics['recall']:.4f}\n")
-            f.write(f"  F1-Score:  {metrics['f1_score']:.4f}\n")
-            f.write(f"  ROC AUC:   {metrics['roc_auc']:.4f}\n\n")
-            
-            f.write("Confusion Matrix:\n")
-            f.write(f"  True Positives:  {metrics['true_positives']}\n")
-            f.write(f"  True Negatives:  {metrics['true_negatives']}\n")
-            f.write(f"  False Positives: {metrics['false_positives']}\n")
-            f.write(f"  False Negatives: {metrics['false_negatives']}\n\n")
-            
-            f.write("Classification Report:\n")
-            f.write(classification_report.__str__())
+        # 4. Tính Confusion Matrix (Chuyển về list để lưu JSON)
+        cm = confusion_matrix(y_test, y_pred)
+        cm_list = cm.tolist()
 
+        # 5. Tính ROC Curve
+        fpr, tpr, _ = roc_curve(y_test, y_score)
+        roc_auc = float(auc(fpr, tpr))
+
+        # 6. Cấu trúc dữ liệu để lưu
+        eval_result = {
+            "model_name": model_name,
+            "metrics": metrics,
+            "confusion_matrix": cm_list,
+            "roc_data": {
+                "fpr": fpr.tolist(), # Chuyển numpy array thành list
+                "tpr": tpr.tolist(),
+                "auc": round(roc_auc, 4)
+            }
+        }
+
+        # 7. Lưu file JSON
+        # Tên file ví dụ: random_forest_metrics.json
+        filename = f"{model_name.lower().replace(' ', '_')}_metrics.json"
+        file_path = os.path.join(self.output_dir, filename)
+        
+        with open(file_path, 'w') as f:
+            json.dump(eval_result, f, indent=4)
+            
+        print(f"[+] Evaluation results saved to: {file_path}")
+        return eval_result
