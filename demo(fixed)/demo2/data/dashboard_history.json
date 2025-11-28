@@ -1,0 +1,283 @@
+[
+  {
+    "id": 1764361427389,
+    "filename": "x86__64__lsb__unix-system-v__clang-3.8.0__O0__no-obf__unstripped__BASHLITE-1.0__client",
+    "consensus": {
+      "consensus": "Benign",
+      "agreement": 100.0,
+      "total": 1,
+      "obf": 0,
+      "ben": 1,
+      "avg_confidence": 0.5052
+    },
+    "results": {
+      "random_forest_model": {
+        "model_name": "Random Forest Model",
+        "model_type": "random_forest",
+        "processing_time": 9.436,
+        "prediction": "Benign",
+        "confidence": 0.5052035516574618
+      }
+    },
+    "timestamp": "2025-11-29T03:23:47.389839",
+    "models_used": [
+      "random_forest_model"
+    ]
+  },
+  {
+    "id": 1764360860316,
+    "filename": "malware01.bin",
+    "consensus": {
+      "consensus": "Benign",
+      "agreement": 100.0,
+      "total": 1,
+      "obf": 0,
+      "ben": 1,
+      "avg_confidence": 0.5
+    },
+    "results": {
+      "xgboost_model": {
+        "model_name": "Xgboost Model",
+        "model_type": "xgboost",
+        "processing_time": 63.084,
+        "prediction": "Benign",
+        "confidence": 0.5
+      }
+    },
+    "timestamp": "2025-11-29T03:14:20.316642",
+    "models_used": [
+      "xgboost_model"
+    ]
+  },
+  {
+    "id": 1764359201249,
+    "filename": "MrsMajor2.0.exe",
+    "consensus": {
+      "consensus": "Uncertain",
+      "agreement": 50.0,
+      "total": 2,
+      "obf": 1,
+      "ben": 1,
+      "avg_confidence": 0.676
+    },
+    "results": {
+      "random_forest_model": {
+        "model_name": "Random Forest Model",
+        "model_type": "random_forest",
+        "processing_time": 26.873,
+        "prediction": "Obfuscated",
+        "confidence": 0.851977174542964
+      },
+      "xgboost_model": {
+        "model_name": "Xgboost Model",
+        "model_type": "xgboost",
+        "processing_time": 22.112,
+        "prediction": "Benign",
+        "confidence": 0.5
+      }
+    },
+    "timestamp": "2025-11-29T02:46:41.249694",
+    "models_used": [
+      "random_forest_model",
+      "xgboost_model"
+    ]
+  },
+  {
+    "id": 1764358066462,
+    "filename": "malware01.bin",
+    "consensus": {
+      "consensus": "Uncertain",
+      "agreement": 50.0,
+      "total": 2,
+      "obf": 1,
+      "ben": 1,
+      "avg_confidence": 0.676
+    },
+    "results": {
+      "random_forest_model": {
+        "model_name": "Random Forest Model",
+        "model_type": "random_forest",
+        "processing_time": 25.954,
+        "prediction": "Obfuscated",
+        "confidence": 0.851977174542964
+      },
+      "xgboost_model": {
+        "model_name": "Xgboost Model",
+        "model_type": "xgboost",
+        "processing_time": 27.436,
+        "prediction": "Benign",
+        "confidence": 0.5
+      }
+    },
+    "timestamp": "2025-11-29T02:27:46.462776",
+    "models_used": [
+      "random_forest_model",
+      "xgboost_model"
+    ]
+  },
+  {
+    "id": 1764357663604,
+    "filename": "malware01.bin",
+    "consensus": {
+      "consensus": "Benign",
+      "agreement": 100.0,
+      "total": 1,
+      "obf": 0,
+      "ben": 1,
+      "avg_confidence": 0.5
+    },
+    "results": {
+      "xgboost_model": {
+        "model_name": "Xgboost Model",
+        "model_type": "xgboost",
+        "processing_time": 72.837,
+        "prediction": "Benign",
+        "confidence": 0.5
+      }
+    },
+    "timestamp": "2025-11-29T02:21:03.604342",
+    "models_used": [
+      "xgboost_model"
+    ]
+  },
+  {
+    "id": 1764357410224,
+    "filename": "x86__64__lsb__unix-system-v__clang-3.8.0__O0__no-obf__unstripped__BASHLITE-1.0__client",
+    "consensus": {
+      "consensus": "Benign",
+      "agreement": 100.0,
+      "total": 1,
+      "obf": 0,
+      "ben": 1,
+      "avg_confidence": 0.5
+    },
+    "results": {
+      "xgboost_model": {
+        "model_name": "Xgboost Model",
+        "model_type": "xgboost",
+        "processing_time": 7.768,
+        "prediction": "Benign",
+        "confidence": 0.5
+      }
+    },
+    "timestamp": "2025-11-29T02:16:50.224796",
+    "models_used": [
+      "xgboost_model"
+    ]
+  },
+  {
+    "id": 1764357394743,
+    "filename": "x86__64__lsb__unix-system-v__clang-3.8.0__O0__no-obf__unstripped__BASHLITE-1.0__client",
+    "consensus": {
+      "consensus": "Benign",
+      "agreement": 100.0,
+      "total": 1,
+      "obf": 0,
+      "ben": 1,
+      "avg_confidence": 0.5052
+    },
+    "results": {
+      "random_forest_model": {
+        "model_name": "Random Forest Model",
+        "model_type": "random_forest",
+        "processing_time": 7.941,
+        "prediction": "Benign",
+        "confidence": 0.5052035516574618
+      }
+    },
+    "timestamp": "2025-11-29T02:16:34.743855",
+    "models_used": [
+      "random_forest_model"
+    ]
+  },
+  {
+    "id": 1764357380300,
+    "filename": "x86__64__lsb__unix-system-v__clang-3.8.0__O0__no-obf__unstripped__BASHLITE-1.0__client",
+    "consensus": {
+      "consensus": "Benign",
+      "agreement": 100.0,
+      "total": 2,
+      "obf": 0,
+      "ben": 2,
+      "avg_confidence": 0.5026
+    },
+    "results": {
+      "random_forest_model": {
+        "model_name": "Random Forest Model",
+        "model_type": "random_forest",
+        "processing_time": 10.64,
+        "prediction": "Benign",
+        "confidence": 0.5052035516574618
+      },
+      "xgboost_model": {
+        "model_name": "Xgboost Model",
+        "model_type": "xgboost",
+        "processing_time": 6.008,
+        "prediction": "Benign",
+        "confidence": 0.5
+      }
+    },
+    "timestamp": "2025-11-29T02:16:20.300966",
+    "models_used": [
+      "random_forest_model",
+      "xgboost_model"
+    ]
+  },
+  {
+    "id": 1764357193114,
+    "filename": "malware01.bin",
+    "consensus": {
+      "consensus": "Obfuscated",
+      "agreement": 100.0,
+      "total": 1,
+      "obf": 1,
+      "ben": 0,
+      "avg_confidence": 0.852
+    },
+    "results": {
+      "random_forest_model": {
+        "model_name": "Random Forest Model",
+        "model_type": "random_forest",
+        "processing_time": 65.566,
+        "prediction": "Obfuscated",
+        "confidence": 0.851977174542964
+      }
+    },
+    "timestamp": "2025-11-29T02:13:13.114469",
+    "models_used": [
+      "random_forest_model"
+    ]
+  },
+  {
+    "id": 1764355910143,
+    "filename": "MrsMajor2.0.exe",
+    "consensus": {
+      "consensus": "Obfuscated",
+      "agreement": 100.0,
+      "avg_confidence": 0.852,
+      "obfuscated_votes": 1,
+      "benign_votes": 0,
+      "total_models": 1
+    },
+    "models_used": [
+      "random_forest_model"
+    ],
+    "results": {
+      "random_forest_model": {
+        "prediction": "Obfuscated",
+        "label": 1,
+        "label_raw": 1,
+        "confidence": 0.851977174542964,
+        "probabilities": {
+          "benign": 0.14802282545703593,
+          "obfuscated": 0.851977174542964
+        },
+        "feature_count": 191,
+        "model_type": "random_forest",
+        "processing_time": 40.594,
+        "model_name": "Random Forest Model"
+      }
+    },
+    "timestamp": "2025-11-29T01:51:50.143142"
+  }
+]
