@@ -1,8 +1,0 @@
-inference:
-  model_type: "random_forest"
-  model_path: "models/random_forest_model.pkl"
-  feature_metadata: "data/processed/feature_metadata.json"
-  model_name: "RandomForest (Obfuscation Detector)"
-  enable_explainability: true
-  top_features: 5
-
