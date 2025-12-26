@@ -1,4 +1,4 @@
-#!C:\Users\Admin\demo2\demo2\.venv\Scripts\python.exe
+#!C:\Users\Admin\demo\demo(fixed)\demo2\.venv\Scripts\python.exe
 #-------------------------------------------------------------------------------
 # scripts/readelf.py
 #
