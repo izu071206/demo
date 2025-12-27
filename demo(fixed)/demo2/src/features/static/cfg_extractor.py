@@ -21,13 +21,14 @@ class CFGExtractor:
     
     def extract_cfg(self, binary_path: str) -> Optional[nx.DiGraph]:
         """
-        Trích xuất CFG từ binary sử dụng angr
+        Trích xuất CFG từ binary sử dụng angr với timeout.
         
         Args:
             binary_path: Path to binary file
+            timeout: Timeout in seconds (default: 30)
             
         Returns:
-            NetworkX DiGraph representing CFG
+            NetworkX DiGraph representing CFG, or None if timeout/error
         """
         try:
             # Load binary với angr
@@ -49,7 +50,9 @@ class CFGExtractor:
         
         except Exception as e:
             logger.error(f"Error extracting CFG from {binary_path}: {e}")
+
             return None
+        
     
     def calculate_metrics(self, graph: nx.DiGraph) -> Dict[str, float]:
         """
@@ -137,13 +140,14 @@ class CFGExtractor:
     
     def extract_features(self, binary_path: str) -> Dict[str, float]:
         """
-        Trích xuất CFG features từ binary
+        Trích xuất CFG features từ binary với timeout.
         
         Args:
             binary_path: Path to binary file
+            timeout: Timeout in seconds for CFG extraction (default: 30)
             
         Returns:
-            Dictionary of CFG metrics
+            Dictionary of CFG metrics (empty metrics if timeout/error)
         """
         graph = self.extract_cfg(binary_path)
         if graph is None:

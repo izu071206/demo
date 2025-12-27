@@ -2,6 +2,7 @@ inference:
   model_type: "random_forest"
   model_path: "models/random_forest_model.pkl"
   feature_metadata: "data/processed/feature_metadata.json"
+  scaler_path: "models/scaler.pkl"  # Optional: path to scaler if preprocessing was used
   model_name: "RandomForest (Obfuscation Detector)"
   enable_explainability: true
   top_features: 5

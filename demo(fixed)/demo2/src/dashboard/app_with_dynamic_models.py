@@ -1,6 +1,8 @@
 """
-Enhanced Flask Dashboard for Obfuscation Detection System
-WITH ADVANCED MODEL SELECTION AND COMPARISON
+Enhanced Flask Dashboard - REFACTORED VERSION
+✅ Đồng bộ với inference pipeline mới
+✅ Hỗ trợ scaler/preprocessing
+✅ Multi-model comparison với consistency checks
 """
 
 import json
@@ -16,7 +18,7 @@ from werkzeug.utils import secure_filename
 
 # Import inference pipeline
 try:
-    from src.pipeline.inference_pipeline import InferencePipeline
+    from src.pipeline.inference_pipeline import InferencePipeline, EnsembleInferencePipeline
     INFERENCE_AVAILABLE = True
 except ImportError as e:
     logging.warning(f"Inference pipeline not available: {e}")
@@ -27,11 +29,14 @@ app = Flask(__name__, template_folder='templates')
 CORS(app)
 
 # Configure directories
-UPLOAD_FOLDER = Path('data/upload')
-EVAL_RESULTS_DIR = Path('data/evaluation_results')
-HISTORY_FILE = Path('data/dashboard_history.json')
-CONFIG_FILE = Path('config/inference_config.yaml')
-MODELS_DIR = Path('models')
+BASE_DIR = Path(__file__).parent.parent.parent
+UPLOAD_FOLDER = BASE_DIR / 'data' / 'upload'
+EVAL_RESULTS_DIR = BASE_DIR / 'data' / 'evaluation_results'
+HISTORY_FILE = BASE_DIR / 'data' / 'dashboard_history.json'
+CONFIG_FILE = BASE_DIR / 'config' / 'inference_config.yaml'
+MODELS_DIR = BASE_DIR / 'models'
+FEATURE_METADATA = BASE_DIR / 'data' / 'processed' / 'feature_metadata.json'
+SCALER_PATH = BASE_DIR / 'models' / 'scaler.pkl'
 
 UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
 EVAL_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -137,16 +142,24 @@ def load_model_by_id(model_id: str):
         logger.info(f"Loading model: {model_info['name']} ({model_info['type']})")
         
         # Get feature metadata path
-        feature_metadata = "data/processed/feature_metadata.json"
-        if not Path(feature_metadata).exists():
-            logger.error(f"Feature metadata not found: {feature_metadata}")
+        feature_metadata = str(FEATURE_METADATA) if FEATURE_METADATA.exists() else None
+        if not feature_metadata:
+            logger.error(f"Feature metadata not found: {FEATURE_METADATA}")
             return False
+        
+        # Get scaler path
+        scaler_path = str(SCALER_PATH) if SCALER_PATH.exists() else None
+        if scaler_path:
+            logger.info(f"Using scaler: {scaler_path}")
+        else:
+            logger.info("No scaler found - model may not use preprocessing")
         
         # Load model
         pipeline = InferencePipeline(
             model_path=model_info['path'],
             model_type=model_info['type'],
             feature_metadata=feature_metadata,
+            scaler_path=scaler_path,  # CRITICAL: Pass scaler path
             enable_explainability=True,
             top_features=5
         )
@@ -324,7 +337,7 @@ def index():
     current_model = get_current_model_info()
     
     return render_template(
-        'enhanced_index.html',
+        'index.html',  # Use same template as app.py
         data=metrics_data,
         all_metrics=all_metrics,
         history=history,
@@ -455,7 +468,7 @@ def api_load_model():
 
 @app.route('/api/models/compare', methods=['POST'])
 def api_compare_models():
-    """Compare predictions from multiple models"""
+    """Compare predictions from multiple models với consistency checks"""
     if 'file' not in request.files:
         return jsonify({'error': 'No file uploaded'}), 400
     
@@ -512,16 +525,39 @@ def api_compare_models():
         except:
             pass
         
-        # Calculate consensus
+        # Calculate consensus và check conflicts
         predictions = [r.get('prediction') for r in results.values() if 'error' not in r]
         obf_count = sum(1 for p in predictions if p == 'Obfuscated')
         ben_count = len(predictions) - obf_count
+        
+        # Check for conflicts (models disagree)
+        conflicts = []
+        for i, (mid1, r1) in enumerate(results.items()):
+            if 'error' in r1:
+                continue
+            for j, (mid2, r2) in enumerate(list(results.items())[i+1:], start=i+1):
+                if 'error' in r2:
+                    continue
+                if r1.get('prediction') != r2.get('prediction'):
+                    prob_diff = abs(
+                        r1.get('probabilities', {}).get('obfuscated', 0) - 
+                        r2.get('probabilities', {}).get('obfuscated', 0)
+                    )
+                    conflicts.append({
+                        'model1': mid1,
+                        'model2': mid2,
+                        'pred1': r1.get('prediction'),
+                        'pred2': r2.get('prediction'),
+                        'prob_diff': prob_diff
+                    })
         
         consensus = {
             'obfuscated_votes': obf_count,
             'benign_votes': ben_count,
             'total_models': len(predictions),
-            'consensus': 'Obfuscated' if obf_count > ben_count else 'Benign' if ben_count > obf_count else 'Split'
+            'consensus': 'Obfuscated' if obf_count > ben_count else 'Benign' if ben_count > obf_count else 'Split',
+            'conflicts': conflicts,
+            'has_conflict': len(conflicts) > 0
         }
         
         return jsonify({

@@ -188,7 +188,8 @@ class APIExtractor:
         # Count API frequencies
         api_counter = Counter(all_apis)
         
-        # Tạo feature vector
+        # Tạo feature vector với FIXED DIMENSION
+        # CRITICAL: Luôn trả về vector với dimension = max_features
         top_apis = dict(api_counter.most_common(max_features))
         
         if top_apis:

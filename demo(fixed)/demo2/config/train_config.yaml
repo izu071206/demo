@@ -38,7 +38,10 @@ training:
     epochs: 50
     early_stopping_patience: 10
   
+  # Preprocessing
+  preprocessing: standard  # Options: 'standard', 'minmax', 'none'
+  
   # Output
   model_save_dir: "models/"
-  results_dir: "results/"
+  results_dir: "data/evaluation_results"
 

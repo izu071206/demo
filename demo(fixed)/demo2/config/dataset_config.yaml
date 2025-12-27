@@ -18,7 +18,7 @@ dataset:
       max_features: 1000
     
     cfg:
-      extract_metrics: true
+      extract_metrics: true  # Disable CFG để tăng tốc (có thể bật lại nếu cần)
       metrics:
         - num_nodes
         - num_edges
@@ -35,4 +35,5 @@ dataset:
   train_ratio: 0.7
   val_ratio: 0.15
   test_ratio: 0.15
+  random_state: 42  # Fixed random state for reproducibility
 

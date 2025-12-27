@@ -63,11 +63,24 @@ def main():
     with open(args.test_data, 'rb') as f:
         X_test, y_test = pickle.load(f)
     
+    # Check for scaler (if preprocessing was used)
+    scaler_path = Path(args.output_dir).parent / "models" / "scaler.pkl"
+    if scaler_path.exists():
+        logger.info(f"Loading scaler from {scaler_path}")
+        with open(scaler_path, 'rb') as f:
+            scaler = pickle.load(f)
+        X_test = scaler.transform(X_test)
+        logger.info("Applied preprocessing scaler to test data")
+    
     # Load model
     logger.info(f"Loading {args.model_type} model from {args.model}")
     model = load_model(args.model_type, args.model)
     
-    X_test = X_test[model.model.feature_names_in_].to_numpy()
+    # Convert to numpy if needed
+    if hasattr(X_test, 'to_numpy'):
+        X_test = X_test.to_numpy()
+    elif hasattr(X_test, 'values'):
+        X_test = X_test.values
 
     # Evaluate
     evaluator = ModelEvaluator()

@@ -1,5 +1,565 @@
 [
   {
+    "id": 1766797529795,
+    "filename": "Bumerang.exe",
+    "consensus": {
+      "consensus": "Obfuscated",
+      "agreement": 100.0,
+      "total": 1,
+      "obf": 1,
+      "ben": 0,
+      "avg_confidence": 1.0
+    },
+    "results": {
+      "random_forest_model": {
+        "model_name": "Random Forest Model",
+        "model_type": "random_forest",
+        "processing_time": 35.276,
+        "prediction": "Obfuscated",
+        "confidence": 1.0,
+        "probabilities": {
+          "benign": 0.0,
+          "obfuscated": 1.0
+        },
+        "feature_count": 3522
+      }
+    },
+    "timestamp": "2025-12-27T08:05:29.796878",
+    "models_used": [
+      "random_forest_model"
+    ]
+  },
+  {
+    "id": 1766797244910,
+    "filename": "Bumerang.exe",
+    "consensus": {
+      "consensus": "Benign",
+      "agreement": 100.0,
+      "total": 1,
+      "obf": 0,
+      "ben": 1,
+      "avg_confidence": 0.896
+    },
+    "results": {
+      "xgboost_model": {
+        "model_name": "Xgboost Model",
+        "model_type": "xgboost",
+        "processing_time": 41.342,
+        "prediction": "Benign",
+        "confidence": 0.8959794044494629,
+        "probabilities": {
+          "benign": 0.8959794044494629,
+          "obfuscated": 0.1040206104516983
+        },
+        "feature_count": 3522
+      }
+    },
+    "timestamp": "2025-12-27T08:00:44.910813",
+    "models_used": [
+      "xgboost_model"
+    ]
+  },
+  {
+    "id": 1766764404047,
+    "filename": "Azorult.exe",
+    "consensus": {
+      "consensus": "Benign",
+      "agreement": 100.0,
+      "total": 1,
+      "obf": 0,
+      "ben": 1,
+      "avg_confidence": 0.896
+    },
+    "results": {
+      "xgboost_model": {
+        "model_name": "Xgboost Model",
+        "model_type": "xgboost",
+        "processing_time": 196.729,
+        "prediction": "Benign",
+        "confidence": 0.8959794044494629,
+        "probabilities": {
+          "benign": 0.8959794044494629,
+          "obfuscated": 0.1040206104516983
+        },
+        "feature_count": 3522
+      }
+    },
+    "timestamp": "2025-12-26T22:53:24.047085",
+    "models_used": [
+      "xgboost_model"
+    ]
+  },
+  {
+    "id": 1766764224355,
+    "filename": "Azorult.exe",
+    "consensus": {
+      "consensus": "Benign",
+      "agreement": 100.0,
+      "total": 1,
+      "obf": 0,
+      "ben": 1,
+      "avg_confidence": 0.896
+    },
+    "results": {
+      "xgboost_model": {
+        "model_name": "Xgboost Model",
+        "model_type": "xgboost",
+        "processing_time": 280.247,
+        "prediction": "Benign",
+        "confidence": 0.8959794044494629,
+        "probabilities": {
+          "benign": 0.8959794044494629,
+          "obfuscated": 0.1040206104516983
+        },
+        "feature_count": 3522
+      }
+    },
+    "timestamp": "2025-12-26T22:50:24.355219",
+    "models_used": [
+      "xgboost_model"
+    ]
+  },
+  {
+    "id": 1766764058003,
+    "filename": "Dharma.exe",
+    "consensus": {
+      "consensus": "Benign",
+      "agreement": 100.0,
+      "total": 1,
+      "obf": 0,
+      "ben": 1,
+      "avg_confidence": 0.896
+    },
+    "results": {
+      "xgboost_model": {
+        "model_name": "Xgboost Model",
+        "model_type": "xgboost",
+        "processing_time": 129.496,
+        "prediction": "Benign",
+        "confidence": 0.8959794044494629,
+        "probabilities": {
+          "benign": 0.8959794044494629,
+          "obfuscated": 0.1040206104516983
+        },
+        "feature_count": 3522
+      }
+    },
+    "timestamp": "2025-12-26T22:47:38.005924",
+    "models_used": [
+      "xgboost_model"
+    ]
+  },
+  {
+    "id": 1766763902981,
+    "filename": "Dharma.exe",
+    "consensus": {
+      "consensus": "Benign",
+      "agreement": 100.0,
+      "total": 1,
+      "obf": 0,
+      "ben": 1,
+      "avg_confidence": 0.896
+    },
+    "results": {
+      "xgboost_model": {
+        "model_name": "Xgboost Model",
+        "model_type": "xgboost",
+        "processing_time": 62.82,
+        "prediction": "Benign",
+        "confidence": 0.8959794044494629,
+        "probabilities": {
+          "benign": 0.8959794044494629,
+          "obfuscated": 0.1040206104516983
+        },
+        "feature_count": 3522
+      }
+    },
+    "timestamp": "2025-12-26T22:45:02.981753",
+    "models_used": [
+      "xgboost_model"
+    ]
+  },
+  {
+    "id": 1766763654457,
+    "filename": "Dharma.exe",
+    "consensus": {
+      "consensus": "Benign",
+      "agreement": 100.0,
+      "total": 1,
+      "obf": 0,
+      "ben": 1,
+      "avg_confidence": 0.896
+    },
+    "results": {
+      "xgboost_model": {
+        "model_name": "Xgboost Model",
+        "model_type": "xgboost",
+        "processing_time": 93.807,
+        "prediction": "Benign",
+        "confidence": 0.8959794044494629,
+        "probabilities": {
+          "benign": 0.8959794044494629,
+          "obfuscated": 0.1040206104516983
+        },
+        "feature_count": 3522
+      }
+    },
+    "timestamp": "2025-12-26T22:40:54.457991",
+    "models_used": [
+      "xgboost_model"
+    ]
+  },
+  {
+    "id": 1766763522697,
+    "filename": "AppVShNotify.exe",
+    "consensus": {
+      "consensus": "Uncertain",
+      "agreement": 50.0,
+      "total": 2,
+      "obf": 1,
+      "ben": 1,
+      "avg_confidence": 0.948
+    },
+    "results": {
+      "random_forest_model": {
+        "model_name": "Random Forest Model",
+        "model_type": "random_forest",
+        "processing_time": 28.931,
+        "prediction": "Obfuscated",
+        "confidence": 1.0,
+        "probabilities": {
+          "benign": 0.0,
+          "obfuscated": 1.0
+        },
+        "feature_count": 3522
+      },
+      "xgboost_model": {
+        "model_name": "Xgboost Model",
+        "model_type": "xgboost",
+        "processing_time": 23.168,
+        "prediction": "Benign",
+        "confidence": 0.8959794044494629,
+        "probabilities": {
+          "benign": 0.8959794044494629,
+          "obfuscated": 0.1040206104516983
+        },
+        "feature_count": 3522
+      }
+    },
+    "timestamp": "2025-12-26T22:38:42.697837",
+    "models_used": [
+      "random_forest_model",
+      "xgboost_model"
+    ]
+  },
+  {
+    "id": 1766762652245,
+    "filename": "exe",
+    "consensus": {
+      "consensus": "Obfuscated",
+      "agreement": 100.0,
+      "total": 1,
+      "obf": 1,
+      "ben": 0,
+      "avg_confidence": 1.0
+    },
+    "results": {
+      "random_forest_model": {
+        "model_name": "Random Forest Model",
+        "model_type": "random_forest",
+        "processing_time": 28.744,
+        "prediction": "Obfuscated",
+        "confidence": 1.0,
+        "probabilities": {
+          "benign": 0.0,
+          "obfuscated": 1.0
+        },
+        "feature_count": 3522
+      },
+      "xgboost_model": {
+        "error": "Feature shape mismatch, expected: 10, got 531"
+      }
+    },
+    "timestamp": "2025-12-26T22:24:12.245921",
+    "models_used": [
+      "random_forest_model",
+      "xgboost_model"
+    ]
+  },
+  {
+    "id": 1766745607580,
+    "filename": "appvcleaner.exe",
+    "consensus": {
+      "consensus": "Uncertain",
+      "agreement": 50.0,
+      "total": 2,
+      "obf": 1,
+      "ben": 1,
+      "avg_confidence": 0.9127
+    },
+    "results": {
+      "random_forest_model": {
+        "model_name": "Random Forest Model",
+        "model_type": "random_forest",
+        "processing_time": 133.708,
+        "prediction": "Obfuscated",
+        "confidence": 0.851977174542964,
+        "probabilities": {
+          "benign": 0.14802282545703593,
+          "obfuscated": 0.851977174542964
+        }
+      },
+      "xgboost_model": {
+        "model_name": "Xgboost Model",
+        "model_type": "xgboost",
+        "processing_time": 123.941,
+        "prediction": "Benign",
+        "confidence": 0.9735029935836792,
+        "probabilities": {
+          "benign": 0.9735029935836792,
+          "obfuscated": 0.02649698033928871
+        }
+      }
+    },
+    "timestamp": "2025-12-26T17:40:07.601397",
+    "models_used": [
+      "random_forest_model",
+      "xgboost_model"
+    ]
+  },
+  {
+    "id": 1766745289354,
+    "filename": "arch.exe",
+    "consensus": {
+      "consensus": "Uncertain",
+      "agreement": 50.0,
+      "total": 2,
+      "obf": 1,
+      "ben": 1,
+      "avg_confidence": 0.9127
+    },
+    "results": {
+      "random_forest_model": {
+        "model_name": "Random Forest Model",
+        "model_type": "random_forest",
+        "processing_time": 5.099,
+        "prediction": "Obfuscated",
+        "confidence": 0.851977174542964
+      },
+      "xgboost_model": {
+        "model_name": "Xgboost Model",
+        "model_type": "xgboost",
+        "processing_time": 5.419,
+        "prediction": "Benign",
+        "confidence": 0.9735029935836792
+      }
+    },
+    "timestamp": "2025-12-26T17:34:49.354490",
+    "models_used": [
+      "random_forest_model",
+      "xgboost_model"
+    ]
+  },
+  {
+    "id": 1766744752161,
+    "filename": "exe",
+    "consensus": {
+      "consensus": "Uncertain",
+      "agreement": 50.0,
+      "total": 2,
+      "obf": 1,
+      "ben": 1,
+      "avg_confidence": 0.9127
+    },
+    "results": {
+      "random_forest_model": {
+        "model_name": "Random Forest Model",
+        "model_type": "random_forest",
+        "processing_time": 14.536,
+        "prediction": "Obfuscated",
+        "confidence": 0.851977174542964
+      },
+      "xgboost_model": {
+        "model_name": "Xgboost Model",
+        "model_type": "xgboost",
+        "processing_time": 11.805,
+        "prediction": "Benign",
+        "confidence": 0.9735029935836792
+      }
+    },
+    "timestamp": "2025-12-26T17:25:52.161468",
+    "models_used": [
+      "random_forest_model",
+      "xgboost_model"
+    ]
+  },
+  {
+    "id": 1766743432582,
+    "filename": "acyclic.exe",
+    "consensus": {
+      "consensus": "Obfuscated",
+      "agreement": 100.0,
+      "total": 1,
+      "obf": 1,
+      "ben": 0,
+      "avg_confidence": 0.852
+    },
+    "results": {
+      "random_forest_model": {
+        "model_name": "Random Forest Model",
+        "model_type": "random_forest",
+        "processing_time": 1.017,
+        "prediction": "Obfuscated",
+        "confidence": 0.851977174542964
+      }
+    },
+    "timestamp": "2025-12-26T17:03:52.582898",
+    "models_used": [
+      "random_forest_model"
+    ]
+  },
+  {
+    "id": 1766743428980,
+    "filename": "acyclic.exe",
+    "consensus": {
+      "consensus": "Obfuscated",
+      "agreement": 100.0,
+      "total": 1,
+      "obf": 1,
+      "ben": 0,
+      "avg_confidence": 0.852
+    },
+    "results": {
+      "random_forest_model": {
+        "model_name": "Random Forest Model",
+        "model_type": "random_forest",
+        "processing_time": 1.114,
+        "prediction": "Obfuscated",
+        "confidence": 0.851977174542964
+      }
+    },
+    "timestamp": "2025-12-26T17:03:48.980293",
+    "models_used": [
+      "random_forest_model"
+    ]
+  },
+  {
+    "id": 1766743395838,
+    "filename": "7ev3n.exe",
+    "consensus": {
+      "consensus": "Obfuscated",
+      "agreement": 100.0,
+      "total": 1,
+      "obf": 1,
+      "ben": 0,
+      "avg_confidence": 0.852
+    },
+    "results": {
+      "random_forest_model": {
+        "model_name": "Random Forest Model",
+        "model_type": "random_forest",
+        "processing_time": 16.529,
+        "prediction": "Obfuscated",
+        "confidence": 0.851977174542964
+      }
+    },
+    "timestamp": "2025-12-26T17:03:15.838126",
+    "models_used": [
+      "random_forest_model"
+    ]
+  },
+  {
+    "id": 1766743368465,
+    "filename": "uckyLocker.exe",
+    "consensus": {
+      "consensus": "Obfuscated",
+      "agreement": 100.0,
+      "total": 1,
+      "obf": 1,
+      "ben": 0,
+      "avg_confidence": 0.852
+    },
+    "results": {
+      "random_forest_model": {
+        "model_name": "Random Forest Model",
+        "model_type": "random_forest",
+        "processing_time": 0.617,
+        "prediction": "Obfuscated",
+        "confidence": 0.851977174542964
+      }
+    },
+    "timestamp": "2025-12-26T17:02:48.465896",
+    "models_used": [
+      "random_forest_model"
+    ]
+  },
+  {
+    "id": 1766743331260,
+    "filename": "7ev3n.exe",
+    "consensus": {
+      "consensus": "Uncertain",
+      "agreement": 50.0,
+      "total": 2,
+      "obf": 1,
+      "ben": 1,
+      "avg_confidence": 0.9127
+    },
+    "results": {
+      "random_forest_model": {
+        "model_name": "Random Forest Model",
+        "model_type": "random_forest",
+        "processing_time": 25.271,
+        "prediction": "Obfuscated",
+        "confidence": 0.851977174542964
+      },
+      "xgboost_model": {
+        "model_name": "Xgboost Model",
+        "model_type": "xgboost",
+        "processing_time": 17.76,
+        "prediction": "Benign",
+        "confidence": 0.9735029935836792
+      }
+    },
+    "timestamp": "2025-12-26T17:02:11.260148",
+    "models_used": [
+      "random_forest_model",
+      "xgboost_model"
+    ]
+  },
+  {
+    "id": 1766743089473,
+    "filename": "uckyLocker.exe",
+    "consensus": {
+      "consensus": "Uncertain",
+      "agreement": 50.0,
+      "total": 2,
+      "obf": 1,
+      "ben": 1,
+      "avg_confidence": 0.9127
+    },
+    "results": {
+      "random_forest_model": {
+        "model_name": "Random Forest Model",
+        "model_type": "random_forest",
+        "processing_time": 0.955,
+        "prediction": "Obfuscated",
+        "confidence": 0.851977174542964
+      },
+      "xgboost_model": {
+        "model_name": "Xgboost Model",
+        "model_type": "xgboost",
+        "processing_time": 0.436,
+        "prediction": "Benign",
+        "confidence": 0.9735029935836792
+      }
+    },
+    "timestamp": "2025-12-26T16:58:09.473146",
+    "models_used": [
+      "random_forest_model",
+      "xgboost_model"
+    ]
+  },
+  {
     "id": 1766738787428,
     "filename": "000.exe",
     "consensus": {
